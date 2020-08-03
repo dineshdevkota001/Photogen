@@ -49,6 +49,21 @@ def path_planning(num_frames, x, y, z, path_type=''):
             zs += [np.cos(bs_shift_val * np.pi/2.) * 1 * z]
         xs, ys, zs = np.array(xs), np.array(ys), np.array(zs)
 
+    elif path_type == 'spiral':
+        xs, ys, zs = [], [], []
+        xpoints = np.append(np.arange(-x,x,2*x/16),x)
+        ypoints = np.append(np.arange(-y,y,2*y/9),y)
+        for a in xpoints:
+            for b in ypoints:
+                xs += [a]
+                ys += [b]
+                zs += [z]
+        # for frame_id, bs_shift_val in enumerate(np.arange(-2.0, 2.0, (4./num_frames))):
+            # xs += [np.cos(bs_shift_val * np.pi) * 1 * x]
+            # ys += [np.sin(bs_shift_val * np.pi) * 1 * y]
+            # zs += [np.cos(bs_shift_val * np.pi/2.) * 1 * z]
+        xs, ys, zs = np.array(xs), np.array(ys), np.array(zs)
+
     return xs, ys, zs
 
 def open_small_mask(mask, context, open_iteration, kernel):

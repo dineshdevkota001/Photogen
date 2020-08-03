@@ -2,3 +2,6 @@ Midas/model.pt
 checkpoints/
 venv/
 **/__pycache__/
+video/
+mesh/
+depth/
