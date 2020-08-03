@@ -1,0 +1,4 @@
+Midas/model.pt
+checkpoints/
+venv/
+**/__pycache__/
