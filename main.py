@@ -30,12 +30,11 @@ def process_image(sample,config,device):
     image = imageio.imread(sample['ref_img_fi'])
 
     # use midas for depth extraction
-    print(f"Running depth extraction at {time.time()-start}")
+    print(f"Running depth extraction at {time.time()}")
     if config['require_midas'] is True:
         run_depth([sample['ref_img_fi']], config['src_folder'], config['depth_folder'],
                   config['MiDaS_model_ckpt'], MonoDepthNet, Midas_utils, target_w=640)
     
-    # for different image format
     if 'npy' in config['depth_format']:
         config['output_h'], config['output_w'] = np.load(sample['depth_fi']).shape[:2]
     else:
@@ -61,7 +60,7 @@ def process_image(sample,config,device):
         model = None
         torch.cuda.empty_cache()
         print("Start Running 3D_Photo ...")
-        print(f"Loading edge model at {time.time()-start}")
+        print(f"Loading edge model at {time.time()}")
         depth_edge_model = Inpaint_Edge_Net(init_weights=True)
         depth_edge_weight = torch.load(config['depth_edge_model_ckpt'],
                                        map_location=torch.device(device))
@@ -69,7 +68,7 @@ def process_image(sample,config,device):
         depth_edge_model = depth_edge_model.to(device)
         depth_edge_model.eval()
 
-        print(f"Loading depth model at {time.time()-start}")
+        print(f"Loading depth model at {time.time()}")
         depth_feat_model = Inpaint_Depth_Net()
         depth_feat_weight = torch.load(config['depth_feat_model_ckpt'],
                                        map_location=torch.device(device))
@@ -77,7 +76,7 @@ def process_image(sample,config,device):
         depth_feat_model = depth_feat_model.to(device)
         depth_feat_model.eval()
         depth_feat_model = depth_feat_model.to(device)
-        print(f"Loading rgb model at {time.time() - start}")
+        print(f"Loading rgb model at {time.time()}")
         rgb_model = Inpaint_Color_Net()
         rgb_feat_weight = torch.load(config['rgb_feat_model_ckpt'],
                                      map_location=torch.device(device))
@@ -87,7 +86,7 @@ def process_image(sample,config,device):
         graph = None
 
 
-        print(f"Writing depth ply (and basically doing everything) at {time.time()-start}")
+        print(f"Writing depth ply (and basically doing everything) at {time.time()}")
         rt_info = write_ply(image,
                               depth,
                               sample['int_mtx'],
@@ -111,7 +110,7 @@ def process_image(sample,config,device):
         verts, colors, faces, Height, Width, hFov, vFov = rt_info
 
 
-    print(f"Making video at {time.time() - start}")
+    print(f"Making video at {time.time() }")
     videos_poses, video_basename = copy.deepcopy(sample['tgts_poses']), sample['tgt_name']
     top = (config.get('original_h') // 2 - sample['int_mtx'][1, 2] * config['output_h'])
     left = (config.get('original_w') // 2 - sample['int_mtx'][0, 2] * config['output_w'])
@@ -124,30 +123,34 @@ def process_image(sample,config,device):
                         mean_loc_depth=mean_loc_depth)
     return
 
-# get the configureation from the external file
-start = time.time()
-parser = argparse.ArgumentParser()
-parser.add_argument('--config', type=str, default='argument.yml',help='Configure of post processing')
-args = parser.parse_args()
-config = yaml.load(open(args.config, 'r'))
+def main():
+    # get the configureation from the external file
+    start = time.time()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', type=str, default='argument.yml',help='Configure of post processing')
+    args = parser.parse_args()
+    config = yaml.load(open(args.config, 'r'))
 
-# configurations and get the folders
-if config['offscreen_rendering'] is True:
-    vispy.use(app='egl')
-os.makedirs(config['mesh_folder'], exist_ok=True)
-os.makedirs(config['video_folder'], exist_ok=True)
-os.makedirs(config['depth_folder'], exist_ok=True)
+    # configurations and get the folders
+    # if config['offscreen_rendering'] is True:
+    #     vispy.use(app='egl')
+    os.makedirs(config['mesh_folder'], exist_ok=True)
+    os.makedirs(config['video_folder'], exist_ok=True)
+    os.makedirs(config['depth_folder'], exist_ok=True)
 
-# use GPU if specified
-if isinstance(config["gpu_ids"], int) and (config["gpu_ids"] >= 0):
-    device = config["gpu_ids"]
-else:
-    device = "cpu"
-print(f"running on device {device}")
+    # use GPU if specified
+    if isinstance(config["gpu_ids"], int) and (config["gpu_ids"] >= 0):
+        device = config["gpu_ids"]
+    else:
+        device = "cpu"
+    print(f"running on device {device}")
 
-# initialize the canvases
-sample_list = get_MiDaS_samples(config['src_folder'], config['depth_folder'], config, config['specific'])
+    # initialize the canvases
+    sample_list = get_MiDaS_samples(config['src_folder'], config['depth_folder'], config, config['specific'])
 
-# for every image repeat the process
-for sample in tqdm(sample_list):
-    process_image(sample,config,device)
+    # for every image repeat the process    
+    for sample in tqdm(sample_list):
+        process_image(sample,config,device)
+
+if __name__=="__main__":
+    main()
