@@ -5,3 +5,7 @@ transforms3d==0.3.1
 networkx==2.3
 cynetworkx
 scikit-image
+torch
+pyyaml
+torchvision
+pyinstaller
